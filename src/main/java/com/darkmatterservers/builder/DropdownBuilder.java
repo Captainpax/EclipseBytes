@@ -18,18 +18,16 @@ public class DropdownBuilder {
         this.id = id;
     }
 
-    public DropdownBuilder withOption(String value) {
-        return withOption(value, value); // label = value
+    public void withOption(String value) {
+        withOption(value, value);
     }
 
-    public DropdownBuilder withOption(String value, String label) {
+    public void withOption(String value, String label) {
         options.add(new Option(value, label));
-        return this;
     }
 
-    public DropdownBuilder register(ComponentHandler handler) {
+    public void register(ComponentHandler handler) {
         InteractionRouter.register(id, handler);
-        return this;
     }
 
     public String id() {

@@ -9,19 +9,24 @@ version = '1.0.0'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(17)
     }
     withSourcesJar()
 }
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 dependencies {
     implementation 'net.dv8tion:JDA:5.6.1'
+
+    // Lombok
     compileOnly 'org.projectlombok:lombok:1.18.28'
     annotationProcessor 'org.projectlombok:lombok:1.18.28'
+
+    // Testing
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
 }
 
@@ -29,20 +34,22 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// Disable plain jar, use shadowJar instead
+// Disable default JAR in favor of Shadow
 tasks.jar {
     enabled = false
 }
 
 tasks.shadowJar {
-    archiveClassifier.set("") // replaces default jar
+    archiveClassifier.set("") // Use this as the main artifact
     mergeServiceFiles()
+
     manifest {
-        attributes 'Main-Class': 'com.darkmatterservers.EclipseBytes' // <-- change this if needed
+        attributes(
+                'Main-Class': 'com.darkmatterservers.EclipseBytes' // make sure this class has main()!
+        )
     }
 }
 
-// ✅ Delay wiring dependency until task exists
 afterEvaluate {
     tasks.named("publishMavenJavaPublicationToMavenLocal") {
         dependsOn tasks.shadowJar
@@ -56,7 +63,7 @@ publishing {
             artifactId = 'eclipsebytes'
             version = project.version
 
-            artifact tasks.shadowJar // publish shadow jar instead of regular jar
+            artifact tasks.shadowJar
             artifact tasks.sourcesJar
         }
     }
