@@ -2,6 +2,8 @@ package com.darkmatterservers.builder;
 
 import com.darkmatterservers.router.ComponentHandler;
 import com.darkmatterservers.router.InteractionRouter;
+import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,6 +38,17 @@ public class DropdownBuilder {
 
     public List<Option> options() {
         return Collections.unmodifiableList(options);
+    }
+
+    /**
+     * Builds a JDA StringSelectMenu component.
+     */
+    public StringSelectMenu build() {
+        StringSelectMenu.Builder menuBuilder = StringSelectMenu.create(id);
+        for (Option opt : options) {
+            menuBuilder.addOptions(SelectOption.of(opt.label(), opt.value()));
+        }
+        return menuBuilder.build();
     }
 
     public record Option(String value, String label) {

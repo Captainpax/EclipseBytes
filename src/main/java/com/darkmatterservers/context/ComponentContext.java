@@ -3,6 +3,7 @@ package com.darkmatterservers.context;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class ComponentContext {
 
@@ -21,29 +22,29 @@ public class ComponentContext {
         data.put(key, value);
     }
 
+    public void putIfAbsent(String key, Object value) {
+        data.putIfAbsent(key, value);
+    }
+
     public Object get(String key) {
         return data.get(key);
+    }
+
+    public <T> Optional<T> get(String key, Class<T> type) {
+        Object value = data.get(key);
+        if (type.isInstance(value)) {
+            return Optional.of(type.cast(value));
+        }
+        return Optional.empty();
     }
 
     public Object getOrDefault(String key, Object defaultValue) {
         return data.getOrDefault(key, defaultValue);
     }
 
-    @SuppressWarnings("unchecked")
-    public <T> T get(String key, Class<T> type) {
-        Object value = data.get(key);
-        if (value == null) return null;
-        if (type.isInstance(value)) return (T) value;
-        throw new ClassCastException("Expected %s but got %s".formatted(type.getName(), value.getClass().getName()));
-    }
-
     public String getString(String key) {
-        Object val = data.get(key);
-        return val instanceof String ? (String) val : null;
-    }
-
-    public void putIfAbsent(String key, Object value) {
-        data.putIfAbsent(key, value);
+        Object value = data.get(key);
+        return value instanceof String str ? str : null;
     }
 
     public Object remove(String key) {
@@ -64,7 +65,6 @@ public class ComponentContext {
 
     @Override
     public String toString() {
-        return "ComponentContext[" +
-                "userId='%s', data=%s]".formatted(userId, data);
+        return "ComponentContext[userId='%s', data=%s]".formatted(userId, data);
     }
 }

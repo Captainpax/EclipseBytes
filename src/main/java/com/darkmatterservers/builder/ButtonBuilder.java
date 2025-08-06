@@ -2,6 +2,7 @@ package com.darkmatterservers.builder;
 
 import com.darkmatterservers.router.ComponentHandler;
 import com.darkmatterservers.router.InteractionRouter;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 public class ButtonBuilder {
 
@@ -24,5 +25,12 @@ public class ButtonBuilder {
 
     public String label() {
         return label;
+    }
+
+    /**
+     * Builds the actual JDA Button component.
+     */
+    public Button build() {
+        return Button.primary(id, label);
     }
 }

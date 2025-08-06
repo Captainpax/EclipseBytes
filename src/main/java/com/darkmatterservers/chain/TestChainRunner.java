@@ -3,6 +3,12 @@ package com.darkmatterservers.chain;
 import com.darkmatterservers.context.ComponentContext;
 import com.darkmatterservers.router.ComponentHandler;
 
+import java.util.Optional;
+
+/**
+ * Simulates the execution of a NewChain from start to finish using default actions.
+ * Useful for testing chain logic in isolation.
+ */
 public class TestChainRunner {
 
     private final NewChain chain;
@@ -13,44 +19,55 @@ public class TestChainRunner {
         this.ctx = new ComponentContext(userId);
     }
 
+    /**
+     * Starts the simulation loop from the entry point.
+     */
     public void simulate() {
         String currentNodeId = chain.getEntryPoint();
 
-        while (currentNodeId != null) {
-            NewChain.ChainNode node = chain.getNode(currentNodeId);
+        if (currentNodeId == null) {
+            System.out.println("❌ No entry point defined for this chain.");
+            return;
+        }
 
-            if (node == null) {
+        while (currentNodeId != null) {
+            Optional<NewChain.ChainNode> optionalNode = chain.getNode(currentNodeId);
+
+            if (optionalNode.isEmpty()) {
                 System.out.println("❌ Node not found: " + currentNodeId);
                 break;
             }
 
-            System.out.println("\n📨 [Chain: " + node.id + "]");
-            System.out.println(node.message);
+            NewChain.ChainNode node = optionalNode.get();
+            System.out.println("\n📨 [Chain Node: " + node.getId() + "]");
+            System.out.println("📋 Message: " + node.getMessage());
 
-            if (node.actions.isEmpty()) {
-                System.out.println("⚠️ No actions available.");
+            if (node.getActions().isEmpty()) {
+                System.out.println("⚠️ No actions available at this node.");
                 break;
             }
 
-            System.out.println("   • Options: " + node.actions.keySet());
+            System.out.println("🔘 Options: " + node.getActions().keySet());
 
-            String chosenAction = node.defaultAction;
-            if (chosenAction == null || !node.actions.containsKey(chosenAction)) {
-                System.out.println("⚠️ No valid default action for this node. Stopping simulation.");
+            String defaultAction = node.getDefaultAction();
+            if (defaultAction == null || !node.hasAction(defaultAction)) {
+                System.out.println("⚠️ No valid default action. Simulation ending.");
                 break;
             }
 
-            System.out.println("   → Simulating action: '" + chosenAction + "'");
-            ComponentHandler handler = node.actions.get(chosenAction);
+            System.out.println("   → Executing default action: '" + defaultAction + "'");
+            ComponentHandler handler = node.getHandler(defaultAction);
             handler.handle(ctx);
 
-            // If no nextNode is set, assume we're done and exit
             if (ctx.has("nextNode")) {
-                currentNodeId = (String) ctx.get("nextNode");
+                currentNodeId = ctx.getString("nextNode");
                 ctx.remove("nextNode");
             } else {
+                System.out.println("🏁 Chain ended. No further steps.");
                 break;
             }
         }
+
+        System.out.println("\n✅ Chain simulation complete.");
     }
 }
