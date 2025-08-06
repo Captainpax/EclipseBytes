@@ -15,9 +15,9 @@ import java.util.Optional;
 public class NewChain {
 
     private final Map<String, ChainNode> nodes = new LinkedHashMap<>();
+
     /**
-     * -- GETTER --
-     *  Returns the ID of the entry node.
+     * The starting node of the chain.
      */
     @Getter
     private String entryPoint;
@@ -50,6 +50,13 @@ public class NewChain {
      */
     public ComponentHandler next(String nextId) {
         return ctx -> ctx.put("nextNode", nextId);
+    }
+
+    /**
+     * Creates a handler that marks the context as complete.
+     */
+    public ComponentHandler complete() {
+        return ComponentContext::complete;
     }
 
     /**
