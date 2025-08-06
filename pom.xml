@@ -5,20 +5,50 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.darkmatterservers</groupId>
-    <artifactId>EclipseBytes</artifactId>
+    <artifactId>eclipsebytes</artifactId>
     <version>1.0-SNAPSHOT</version>
+
+    <name>EclipseBytes</name>
+    <description>Message tracker, builder, and interaction framework for Discord bots (JDA-based)</description>
+    <url>https://github.com/darkmatterservers/eclipsebytes</url>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-        <maven.compiler.compilerVersion>21</maven.compiler.compilerVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <enable.preview>true</enable.preview>
+        <main.class>com.darkmatterservers.Main</main.class>
     </properties>
+
+    <dependencies>
+        <!-- JDA core (make sure you include this if EclipseBytes uses it) -->
+        <dependency>
+            <groupId>net.dv8tion</groupId>
+            <artifactId>JDA</artifactId>
+            <version>5.0.0-beta.23</version>
+        </dependency>
+
+        <!-- Optional: Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.28</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Optional: JUnit 5 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
 
-            <!-- Java compiler plugin with preview enabled -->
+            <!-- 🛠 Java Compiler (Preview Enabled) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -31,7 +61,21 @@
                 </configuration>
             </plugin>
 
-            <!-- Enable preview mode at runtime -->
+            <!-- ✅ JAR plugin with Main-Class -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>${main.class}</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <!-- ✅ Enable preview for test runtime -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -41,33 +85,34 @@
                 </configuration>
             </plugin>
 
-            <!-- Optional: run the app with preview mode -->
+            <!-- ✅ Optional: Run app directly via Maven -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
-                    <mainClass>com.darkmatterservers.Main</mainClass>
+                    <mainClass>${main.class}</mainClass>
                     <arguments>
                         <argument>--enable-preview</argument>
                     </arguments>
                 </configuration>
             </plugin>
 
-            <!-- ✅ Add Main-Class manifest entry -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.3.0</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>com.darkmatterservers.Main</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
-
         </plugins>
     </build>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>pax</id>
+            <name>Pax</name>
+            <email>contact@darkmatterservers.com</email>
+        </developer>
+    </developers>
 </project>
