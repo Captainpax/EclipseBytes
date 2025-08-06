@@ -6,7 +6,7 @@
 
     <groupId>com.darkmatterservers</groupId>
     <artifactId>eclipsebytes</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <name>EclipseBytes</name>
     <description>Message tracker, builder, and interaction framework for Discord bots (JDA-based)</description>
