@@ -19,9 +19,12 @@ import java.util.List;
  * - Embed (title and description; footer shows page counter)
  * - ActionRows (0..2 button rows, optional dropdown row)
  * <p>
- * Supports runtime dropdown overrides via ctx key: "<dropdownId>.options" -> List<String>
- * Supports optional button styles via Page.ComponentRef.style() (defaults to PRIMARY)
+ * Dynamic behavior:
+ * - If the context contains a key "<dropdownId>.options" with a List<String>, those
+ *   options override the dropdown's baked-in list for this render.
+ * - Button styles are honored from Page.ComponentRef.style(); defaults to PRIMARY when null.
  */
+@SuppressWarnings("unused")
 public class PageRenderer {
 
     public record Rendered(MessageEmbed embed, List<ActionRow> rows) {}
@@ -35,11 +38,11 @@ public class PageRenderer {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("☼ " + chainTitle + " ☼");
         eb.setFooter("Page " + (pageIndex + 1) + " of " + totalPages);
-        eb.setColor(new Color(0x5865F2)); // default theme color
+        eb.setColor(new Color(0x5865F2)); // default theme color (Discord blurple)
 
         StringBuilder desc = new StringBuilder();
-        if (page.line1() != null) desc.append(page.line1()).append('\n');
-        if (page.line2() != null) desc.append(page.line2()).append('\n');
+        if (page.line1() != null && !page.line1().isBlank()) desc.append(page.line1()).append('\n');
+        if (page.line2() != null && !page.line2().isBlank()) desc.append(page.line2()).append('\n');
         eb.setDescription(desc.toString());
 
         List<ActionRow> rows = new ArrayList<>();
@@ -73,7 +76,8 @@ public class PageRenderer {
         // ---- Dropdown (optional) ----
         if (page.dropdown() != null && page.dropdown().isDropdown()) {
             var dd = page.dropdown();
-            StringSelectMenu.Builder menu = StringSelectMenu.create(dd.id()).setPlaceholder(dd.label());
+            String placeholder = (dd.label() == null || dd.label().isBlank()) ? "Select an option" : dd.label();
+            StringSelectMenu.Builder menu = StringSelectMenu.create(dd.id()).setPlaceholder(placeholder);
 
             List<String> opts = dd.options();
             // Dynamic override: ctx key "<id>.options" -> List<String>
@@ -87,7 +91,8 @@ public class PageRenderer {
             }
 
             if (opts != null) {
-                for (String opt : opts) {
+                for (String opt : limitOptions(opts)) { // Discord limit for StringSelect is 25
+                    if (opt == null) continue;
                     menu.addOptions(SelectOption.of(opt, opt));
                 }
             }
@@ -95,5 +100,11 @@ public class PageRenderer {
         }
 
         return new Rendered(eb.build(), rows);
+    }
+
+    private static List<String> limitOptions(List<String> src) {
+        if (src == null) return null;
+        int end = Math.min(src.size(), Math.max(0, 25));
+        return new ArrayList<>(src.subList(0, end));
     }
 }
