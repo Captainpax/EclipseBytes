@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -17,16 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * EclipseBytes – thin runtime helper around the paged chain system.
- *
- * Responsibilities:
- *  - Start a paged chain in DMs (or any channel)
- *  - Handle dropdown + button interactions and re-render current page
- *  - Maintain a simple in-memory session per user (userId → {chain, ctx})
- *
- * Out of scope:
- *  - Persistent session storage (you can swap the sessions map for your store)
- *  - Editing previous message vs sending a new one (we send a new one for simplicity)
+ * EclipseBytes – a thin runtime helper around the paged chain system.
  */
 public class EclipseBytes {
 
@@ -102,22 +94,15 @@ public class EclipseBytes {
     // JDA interaction handlers
     // ---------------------------
 
-    /**
-     * Call this from your JDA listener when a dropdown interaction occurs.
-     * Example:
-     *  public void onStringSelectInteraction(StringSelectInteractionEvent event) {
-     *      eclipseBytes.handleDropdownInteraction(event);
-     *  }
-     */
+    /** Handle dropdown (StringSelect) interactions. */
     public void handleDropdownInteraction(StringSelectInteractionEvent event) {
         String userId = event.getUser().getId();
         Session session = sessions.get(userId);
         if (session == null) {
             event.deferEdit().queue();
-            return; // No active chain for this user
+            return; // No active chain
         }
 
-        // Marshal interaction into context
         String componentId = event.getComponentId();
         String selected = event.getValues().isEmpty() ? null : event.getValues().get(0);
 
@@ -126,29 +111,20 @@ public class EclipseBytes {
         ctx.put("interactionValue", selected);   // modern-friendly
         ctx.put("rawEvent", event);
 
-        // Route to the registered handler
         InteractionRouter.handle(componentId, ctx);
-
-        // Acknowledge quickly to avoid "This interaction failed"
         event.deferEdit().queue();
 
-        // Re-render current page (or finish)
+        // Re-render (MessageChannelUnion implements MessageChannel in JDA 5)
         renderPostInteraction(userId, event.getChannel());
     }
 
-    /**
-     * Call this from your JDA listener when a button interaction occurs.
-     * Example:
-     *  public void onButtonInteraction(ButtonInteractionEvent event) {
-     *      eclipseBytes.handleButtonInteraction(event);
-     *  }
-     */
+    /** Handle button interactions. */
     public void handleButtonInteraction(ButtonInteractionEvent event) {
         String userId = event.getUser().getId();
         Session session = sessions.get(userId);
         if (session == null) {
             event.deferEdit().queue();
-            return; // No active chain for this user
+            return; // No active chain
         }
 
         String componentId = event.getComponentId();
@@ -157,7 +133,6 @@ public class EclipseBytes {
         ctx.put("rawEvent", event);
 
         InteractionRouter.handle(componentId, ctx);
-
         event.deferEdit().queue();
 
         renderPostInteraction(userId, event.getChannel());
@@ -172,7 +147,6 @@ public class EclipseBytes {
         if (session == null) return;
 
         if (session.ctx().isComplete()) {
-            // Finalize and clear session
             channel.sendMessage("✅ Setup complete!").queue();
             sessions.remove(userId);
             return;
@@ -196,8 +170,8 @@ public class EclipseBytes {
         Page page = chain.page(idx);
 
         PageRenderer.Rendered rendered = PageRenderer.render(chain.chainId(), idx, total, page);
-        channel.sendMessage(rendered.content())
-                .addContent(rendered.rows().toString()) // plural form accepts a List<ActionRow>
+        channel.sendMessageEmbeds(rendered.embed())
+                .setComponents(rendered.rows().toArray(ActionRow[]::new))
                 .queue();
     }
 
