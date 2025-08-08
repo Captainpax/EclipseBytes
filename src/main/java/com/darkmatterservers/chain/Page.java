@@ -1,5 +1,7 @@
 package com.darkmatterservers.chain;
 
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -9,6 +11,7 @@ import java.util.Objects;
  * - Up to 8 buttons (indexes 0..7). Two rows of 4 are rendered if non-null.
  * - Optional one dropdown.
  */
+@SuppressWarnings("unused")
 public class Page {
 
     private final String line1;
@@ -60,14 +63,17 @@ public class Page {
      * id: unique id used by the router
      * label: button label OR dropdown placeholder
      * options: for dropdown only (nullable for buttons)
+     * style: optional for buttons (defaults to PRIMARY when null)
      */
-    public record ComponentRef(String type, String id, String label, List<String> options) {
+    public record ComponentRef(String type, String id, String label, List<String> options, ButtonStyle style) {
         public static ComponentRef button(String id, String label) {
-            return new ComponentRef("button", id, label, null);
+            return new ComponentRef("button", id, label, null, ButtonStyle.PRIMARY);
         }
-
+        public static ComponentRef button(String id, String label, ButtonStyle style) {
+            return new ComponentRef("button", id, label, null, style);
+        }
         public static ComponentRef dropdown(String id, String placeholder, List<String> options) {
-            return new ComponentRef("dropdown", id, placeholder, options);
+            return new ComponentRef("dropdown", id, placeholder, options, null);
         }
 
         public boolean isButton() { return Objects.equals(type, "button"); }

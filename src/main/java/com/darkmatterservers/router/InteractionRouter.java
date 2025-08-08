@@ -4,7 +4,7 @@ import com.darkmatterservers.context.ComponentContext;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
+@SuppressWarnings("unused")
 public class InteractionRouter {
 
     private static final Map<String, ComponentHandler> handlers = new ConcurrentHashMap<>();

@@ -20,6 +20,7 @@ import java.util.*;
  *  - Keys.CHANNEL_ID    -> String    (where the message lives)
  *  - Keys.GUILD_ID      -> String    (optional, if relevant)
  */
+@SuppressWarnings("unused")
 public class PagedChain {
 
     /** Canonical context keys for consistent persistence and rendering. */
@@ -29,6 +30,7 @@ public class PagedChain {
         public static final String MESSAGE_ID  = "messageId";   // set by the runtime after the first send
         public static final String CHANNEL_ID  = "channelId";   // set by the runtime after the first send
         public static final String GUILD_ID    = "guildId";     // optional: set by chain logic
+        private Keys() {}
     }
 
     private final String chainId;
@@ -38,22 +40,14 @@ public class PagedChain {
         if (pages.isEmpty()) throw new IllegalArgumentException("PagedChain requires at least one page");
         this.chainId = chainId;
         this.pages = List.copyOf(pages);
-        Map<String, ComponentHandler> handlers1 = Map.copyOf(handlers);
         // Register all handlers with the global router
-        handlers1.forEach(InteractionRouter::register);
+        Map<String, ComponentHandler> copy = Map.copyOf(handlers);
+        copy.forEach(InteractionRouter::register);
     }
 
-    public String chainId() {
-        return chainId;
-    }
-
-    public int totalPages() {
-        return pages.size();
-    }
-
-    public Page page(int index) {
-        return pages.get(index);
-    }
+    public String chainId() { return chainId; }
+    public int totalPages() { return pages.size(); }
+    public Page page(int index) { return pages.get(index); }
 
     public int clampIndex(int i) {
         if (i < 0) return 0;
@@ -113,12 +107,12 @@ public class PagedChain {
         }
 
         public Builder addPage(Page page) {
-            pages.add(page);
+            pages.add(Objects.requireNonNull(page, "page"));
             return this;
         }
 
         public Builder on(String componentId, ComponentHandler handler) {
-            handlers.put(componentId, handler);
+            handlers.put(Objects.requireNonNull(componentId, "componentId"), Objects.requireNonNull(handler, "handler"));
             return this;
         }
 

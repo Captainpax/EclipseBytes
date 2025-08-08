@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * EclipseBytes – a thin runtime helper around the paged chain system.
  */
+@SuppressWarnings("unused")
 public class EclipseBytes {
 
     private final JDA jda;

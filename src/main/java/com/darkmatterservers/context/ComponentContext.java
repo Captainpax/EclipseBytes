@@ -8,9 +8,9 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * ComponentContext holds state for a single user's interaction session.
+ * ComponentContext holds the state for a single user's interaction session.
  * Used across chains and component handlers to store and retrieve data.
- *
+ * <p>
  * Conventions used by EclipseBytes:
  *  - For dropdowns, Bytes sets:
  *      * "value"              -> String (selected value or null)
@@ -19,9 +19,10 @@ import java.util.Optional;
  *  - For buttons, Bytes sets:
  *      * "buttonId"           -> String (component id)
  *      * "rawEvent"           -> the JDA event object
- *
+ * <p>
  * You can store anything else you want alongside those keys.
  */
+@SuppressWarnings("unused")
 public class ComponentContext {
 
     private final String userId;
@@ -134,7 +135,7 @@ public class ComponentContext {
 
     /**
      * Returns the current selection/value from the interaction.
-     * Bytes sets both \"value\" and \"interactionValue\" for convenience; we check both.
+     * Bytes set both \"value\" and \"interactionValue\" for convenience; we check both.
      */
     public String interactionValue() {
         String v = getString("interactionValue");
