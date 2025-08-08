@@ -5,7 +5,6 @@ import com.darkmatterservers.router.ComponentHandler;
 import com.darkmatterservers.router.InteractionRouter;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 /**
  * A paged chain with uniform pages.
@@ -13,23 +12,35 @@ import java.util.function.Consumer;
  * - chainId (title)
  * - pages (Page objects)
  * - handlers for buttons/dropdowns (by component id)
- *
- * Runtime state:
- * - stores "pageIndex" in the ComponentContext
+ * <p>
+ * Runtime state (stored in ComponentContext):
+ *  - Keys.PAGE_INDEX    -> int       (0-based)
+ *  - Keys.TOTAL_PAGES   -> int
+ *  - Keys.MESSAGE_ID    -> String    (the Discord message we edit in-place)
+ *  - Keys.CHANNEL_ID    -> String    (where the message lives)
+ *  - Keys.GUILD_ID      -> String    (optional, if relevant)
  */
 public class PagedChain {
 
+    /** Canonical context keys for consistent persistence and rendering. */
+    public static final class Keys {
+        public static final String PAGE_INDEX  = "pageIndex";
+        public static final String TOTAL_PAGES = "totalPages";
+        public static final String MESSAGE_ID  = "messageId";   // set by the runtime after the first send
+        public static final String CHANNEL_ID  = "channelId";   // set by the runtime after the first send
+        public static final String GUILD_ID    = "guildId";     // optional: set by chain logic
+    }
+
     private final String chainId;
     private final List<Page> pages;
-    private final Map<String, ComponentHandler> handlers;
 
     private PagedChain(String chainId, List<Page> pages, Map<String, ComponentHandler> handlers) {
         if (pages.isEmpty()) throw new IllegalArgumentException("PagedChain requires at least one page");
         this.chainId = chainId;
         this.pages = List.copyOf(pages);
-        this.handlers = Map.copyOf(handlers);
-        // register all handlers
-        this.handlers.forEach(InteractionRouter::register);
+        Map<String, ComponentHandler> handlers1 = Map.copyOf(handlers);
+        // Register all handlers with the global router
+        handlers1.forEach(InteractionRouter::register);
     }
 
     public String chainId() {
@@ -50,7 +61,46 @@ public class PagedChain {
         return i;
     }
 
-    // --- Builder ---
+    // ---------------------------------
+    // Navigation helpers (static)
+    // ---------------------------------
+
+    /** Read page index from context; returns 0 if missing/invalid. */
+    public static int getPageIndex(ComponentContext ctx) {
+        Object v = ctx.get(Keys.PAGE_INDEX);
+        if (v instanceof Number n) return n.intValue();
+        try {
+            if (v instanceof String s) return Integer.parseInt(s.trim());
+        } catch (NumberFormatException ignored) {}
+        return 0;
+    }
+
+    /** Read total pages from context; returns 1 if missing/invalid. */
+    public static int getTotalPages(ComponentContext ctx) {
+        Object v = ctx.get(Keys.TOTAL_PAGES);
+        if (v instanceof Number n) return n.intValue();
+        try {
+            if (v instanceof String s) return Integer.parseInt(s.trim());
+        } catch (NumberFormatException ignored) {}
+        return 1;
+    }
+
+    /** Set the page index with clamping to [0.total-1]. */
+    public static void setPageIndexClamped(ComponentContext ctx, int newIndex) {
+        int total = Math.max(1, getTotalPages(ctx));
+        int clamped = Math.max(0, Math.min(total - 1, newIndex));
+        ctx.put(Keys.PAGE_INDEX, clamped);
+    }
+
+    /** Increment/ decrement of the current page index with clamping. */
+    public static void advancePage(ComponentContext ctx, int delta) {
+        int idx = getPageIndex(ctx);
+        setPageIndexClamped(ctx, idx + delta);
+    }
+
+    // ---------------------------------
+    // Builder
+    // ---------------------------------
 
     public static class Builder {
         private String chainId;
@@ -73,23 +123,16 @@ public class PagedChain {
         }
 
         /**
-         * Utility wiring for classic next/back/done semantics that advance
-         * or finish the chain by modifying the ComponentContext.
-         * You can also override these with your own handler when calling .on(id, handler).
+         * Wires classic next/back/done semantics that advance or finish the chain by
+         * modifying ComponentContext using standard keys. You can override any of these
+         * by registering your own handler with the same component id via {@link #on(String, ComponentHandler)}.
          */
         public Builder wireNavigation(String backId, String nextId, String doneId) {
             if (backId != null) {
-                handlers.putIfAbsent(backId, ctx -> {
-                    int idx = Optional.ofNullable((Integer) ctx.get("pageIndex")).orElse(0);
-                    ctx.put("pageIndex", Math.max(0, idx - 1));
-                });
+                handlers.putIfAbsent(backId, ctx -> advancePage(ctx, -1));
             }
             if (nextId != null) {
-                handlers.putIfAbsent(nextId, ctx -> {
-                    int idx = Optional.ofNullable((Integer) ctx.get("pageIndex")).orElse(0);
-                    int max = Optional.ofNullable((Integer) ctx.get("totalPages")).orElse(1) - 1;
-                    ctx.put("pageIndex", Math.min(max, idx + 1));
-                });
+                handlers.putIfAbsent(nextId, ctx -> advancePage(ctx, +1));
             }
             if (doneId != null) {
                 handlers.putIfAbsent(doneId, ComponentContext::complete);
