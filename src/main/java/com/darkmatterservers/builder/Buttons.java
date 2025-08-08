@@ -10,8 +10,7 @@ import java.util.List;
  * Matches the "bytes.next/back/done/buildButton" + single-dropdown pattern
  * used by the paged chain system.
  * <p>
- * NEW:
- * - Optional color/style for buttons via ButtonStyle
+ * Adds support for LINK buttons via buildLink(String url, String label).
  */
 @SuppressWarnings("unused")
 public final class Buttons {
@@ -35,6 +34,15 @@ public final class Buttons {
 
     public static Page.ComponentRef buildButton(String id, String label, ButtonStyle style) {
         return Page.ComponentRef.button(id, label, style == null ? ButtonStyle.PRIMARY : style);
+    }
+
+    /**
+     * Build a LINK-style button. For JDA, link buttons use the URL as the "id" field
+     * (and are rendered by the PageRenderer as Button.link(url, label)).
+     */
+    public static Page.ComponentRef buildLink(String url, String label) {
+        if (url == null || url.isBlank()) throw new IllegalArgumentException("url must not be blank");
+        return Page.ComponentRef.button(url, label, ButtonStyle.LINK);
     }
 
     // Single dropdown factory (id + placeholder + options)
