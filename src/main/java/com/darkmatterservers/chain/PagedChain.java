@@ -19,6 +19,11 @@ import java.util.*;
  *  - Keys.MESSAGE_ID    -> String    (the Discord message we edit in-place)
  *  - Keys.CHANNEL_ID    -> String    (where the message lives)
  *  - Keys.GUILD_ID      -> String    (optional, if relevant)
+ * <p>
+ * Optional dropdown UX keys (conventions used by PageRenderer/Bytes/Dropdowns):
+ *  - "<dropdownId>.options" -> List<String>  (runtime override of options)
+ *  - "<dropdownId>.selected" -> String (keep a picked option highlighted)
+ *  - "<dropdownId>.autoNext" -> boolean (if true, advance page after pick)
  */
 @SuppressWarnings("unused")
 public class PagedChain {
@@ -90,6 +95,24 @@ public class PagedChain {
     public static void advancePage(ComponentContext ctx, int delta) {
         int idx = getPageIndex(ctx);
         setPageIndexClamped(ctx, idx + delta);
+    }
+
+    // ---------------------------------
+    // Optional dropdown UX helpers (static)
+    // ---------------------------------
+
+    /** Marks a dropdown selection so the renderer can highlight it. */
+    public static void markDropdownSelected(ComponentContext ctx, String dropdownId, String value) {
+        if (dropdownId != null) ctx.put(dropdownId + ".selected", value);
+    }
+
+    /** Returns true if auto-next is enabled for this dropdown in the context. */
+    public static boolean isAutoNext(ComponentContext ctx, String dropdownId) {
+        if (dropdownId == null) return false;
+        Object v = ctx.get(dropdownId + ".autoNext");
+        if (v instanceof Boolean b) return b;
+        if (v instanceof String s) return Boolean.parseBoolean(s);
+        return false;
     }
 
     // ---------------------------------

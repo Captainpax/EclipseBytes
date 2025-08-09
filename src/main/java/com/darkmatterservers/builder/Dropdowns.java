@@ -11,9 +11,11 @@ import java.util.List;
  * Convenience helpers for creating single dropdowns used by the paged chain system.
  * <p>
  * Notes:
- * - The PageRenderer will dynamically override options if ctx has "<dropdownId>.options" (List<String>).
+ * - PageRenderer can dynamically override options via ctx key: "<dropdownId>.options" (List<String>).
+ * - PageRenderer can also highlight the selected option via ctx key: "<dropdownId>.selected".
+ * - Optional auto-advance: set ctx key "<dropdownId>.autoNext" = true to jump to the next page after a pick.
  * - These helpers keep label == value. If you need distinct labels/values later,
- *   we can extend Page.ComponentRef and renderer to support pairs.
+ *   extend Page.ComponentRef and the renderer to support pairs.
  */
 @SuppressWarnings("unused")
 public final class Dropdowns {
@@ -38,10 +40,9 @@ public final class Dropdowns {
         return Page.ComponentRef.dropdown(id, placeholder, null);
     }
 
-    /**
-     * Override the options at runtime (used by PageRenderer).
-     * Stores under key "<id>.options" inside the provided context.
-     */
+    // ---------- Runtime helpers (store state in ComponentContext) ----------
+
+    /** Override the options at runtime (used by PageRenderer). Stores under key "<id>.options". */
     public static void overrideOptions(ComponentContext ctx, String id, Collection<String> options) {
         ctx.put(id + ".options", trim(options));
     }
@@ -51,14 +52,29 @@ public final class Dropdowns {
         ctx.put(id + ".options", trimStringify(options));
     }
 
+    /** Mark a selected value so the renderer highlights it in the dropdown. Stores under "<id>.selected". */
+    public static void markSelected(ComponentContext ctx, String id, String value) {
+        ctx.put(id + ".selected", value);
+    }
+
+    /** Enable auto-advance: after a selection on this dropdown, advance one page. Stores "<id>.autoNext" = true. */
+    public static void enableAutoNext(ComponentContext ctx, String id) {
+        ctx.put(id + ".autoNext", Boolean.TRUE);
+    }
+
+    /** Disable auto-advance flag for this dropdown. */
+    public static void disableAutoNext(ComponentContext ctx, String id) {
+        ctx.put(id + ".autoNext", Boolean.FALSE);
+    }
+
     // ---------- internal utils ----------
 
     private static List<String> trim(Collection<String> src) {
         if (src == null) return null;
-        List<String> out = new ArrayList<>(Math.min(src.size(), Dropdowns.MAX_OPTIONS));
+        List<String> out = new ArrayList<>(Math.min(src.size(), MAX_OPTIONS));
         int i = 0;
         for (String s : src) {
-            if (i++ >= Dropdowns.MAX_OPTIONS) break;
+            if (i++ >= MAX_OPTIONS) break;
             out.add(s);
         }
         return out;
@@ -66,10 +82,10 @@ public final class Dropdowns {
 
     private static List<String> trimStringify(Collection<?> src) {
         if (src == null) return null;
-        List<String> out = new ArrayList<>(Math.min(src.size(), Dropdowns.MAX_OPTIONS));
+        List<String> out = new ArrayList<>(Math.min(src.size(), MAX_OPTIONS));
         int i = 0;
         for (Object o : src) {
-            if (i++ >= Dropdowns.MAX_OPTIONS) break;
+            if (i++ >= MAX_OPTIONS) break;
             out.add(String.valueOf(o));
         }
         return out;

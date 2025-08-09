@@ -16,12 +16,12 @@ import java.util.List;
 
 /**
  * Renders a Page into:
- * - Embed (title and description; footer shows page counter)
+ * - Embed (title and two description lines; footer shows page counter)
  * - ActionRows (0..2 button rows, optional dropdown row)
  * <p>
  * Dynamic behavior:
- * - If the context contains a key "<dropdownId>.options" with a List<String>, those
- *   options override the dropdown's baked-in list for this render.
+ * - Override dropdown options at render time via ctx key "<dropdownId>.options" (List<String>).
+ * - Keep a dropdown option highlighted via ctx key "<dropdownId>.selected" (String).
  * - Button styles are honored from Page.ComponentRef.style(); defaults to PRIMARY when null.
  */
 @SuppressWarnings("unused")
@@ -79,7 +79,9 @@ public class PageRenderer {
             String placeholder = (dd.label() == null || dd.label().isBlank()) ? "Select an option" : dd.label();
             StringSelectMenu.Builder menu = StringSelectMenu.create(dd.id()).setPlaceholder(placeholder);
 
+            // Start with the baked-in options
             List<String> opts = dd.options();
+
             // Dynamic override: ctx key "<id>.options" -> List<String>
             if (ctx != null) {
                 Object override = ctx.get(dd.id() + ".options");
@@ -90,10 +92,21 @@ public class PageRenderer {
                 }
             }
 
+            // Read selected for highlight
+            String selected = null;
+            if (ctx != null) {
+                Object sel = ctx.get(dd.id() + ".selected");
+                if (sel instanceof String s) selected = s;
+            }
+
             if (opts != null) {
-                for (String opt : limitOptions(opts)) { // Discord limit for StringSelect is 25
+                for (String opt : limitOptions(opts)) { // Discord StringSelect max 25
                     if (opt == null) continue;
-                    menu.addOptions(SelectOption.of(opt, opt));
+                    SelectOption so = SelectOption.of(opt, opt);
+                    if (selected != null && selected.equals(opt)) {
+                        so = so.withDefault(true); // keep it highlighted
+                    }
+                    menu.addOptions(so);
                 }
             }
             rows.add(ActionRow.of(menu.build()));
